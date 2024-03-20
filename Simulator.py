@@ -66,8 +66,8 @@ class Speculation:
                 sum += obj.Amount
         return sum
 
-    def TransitionMultiplier(self):
-        Total = self.TotalTokens()
+    def TransitionMultiplier(self, MintRunningTotal):
+        Total = self.TotalTokens() + MintRunningTotal
         global TransitionStart
         global TransitionMid
         global TransitionEnd
@@ -80,19 +80,19 @@ class Speculation:
         else:
             return (1)
 
-    def MintingMultiplier(self, PredictionBool):
-        Total = self.TotalTokens()
-        PositiveTotal = self.TotalPositiveTokens()
-        NegativeTotal = self.TotalNegativeTokens()
+    def MintingMultiplier(self, PredictionBool, MintRunningTotal):
+        Total = self.TotalTokens() + MintRunningTotal
         global OriginalMintRate
         if PredictionBool:
-            return(OriginalMintRate +(((Total/PositiveTotal)-OriginalMintRate)*self.TransitionMultiplier()))
+            PositiveTotal = self.TotalPositiveTokens() + MintRunningTotal
+            return(OriginalMintRate +(((Total/PositiveTotal)-OriginalMintRate)*self.TransitionMultiplier(MintRunningTotal)))
         else:
-            return(OriginalMintRate +(((Total/NegativeTotal)-OriginalMintRate)*self.TransitionMultiplier()))
+            NegativeTotal = self.TotalNegativeTokens() + MintRunningTotal
+            return(OriginalMintRate +(((Total/NegativeTotal)-OriginalMintRate)*self.TransitionMultiplier(MintRunningTotal)))
 
-    def Mint(self,Investment,PredictionBool):
+    def Mint(self,Investment,PredictionBool, MintRunningTotal):
         self.TotalInvested += Investment
-        return(Investment*self.MintingMultiplier(PredictionBool))
+        return(Investment*self.MintingMultiplier(PredictionBool, MintRunningTotal))
 
     def SlowMintLoop(self,Investment,PredictionBool):
         InvestmentRunningTotal = Investment
@@ -100,10 +100,10 @@ class Speculation:
         MintRunningTotal = 0
 
         while InvestmentRunningTotal > MaxInvestment:
-            MintRunningTotal += self.Mint(MaxInvestment,PredictionBool)
+            MintRunningTotal += self.Mint(MaxInvestment,PredictionBool, MintRunningTotal)
             InvestmentRunningTotal = InvestmentRunningTotal - MaxInvestment
 
-        MintRunningTotal += self.Mint(InvestmentRunningTotal,PredictionBool)
+        MintRunningTotal += self.Mint(InvestmentRunningTotal,PredictionBool, MintRunningTotal)
         return(MintRunningTotal)
 
 
@@ -161,7 +161,7 @@ AdamsTokens = Token(10, True)
 print(AdamsTokens.Name)
 '''
 
-'''
+
 #Speculation Initialisation Test
 Providence = Speculation("PRO")
 print(Providence.TotalTokens())
@@ -170,12 +170,12 @@ print(Providence.TotalTokens())
 
 #Person and Token Initialisation Test
 Adam = Person("Adam")
-Adam.AddTokens(Providence, 10, True)
+Adam.AddTokens(Providence, 4000, True)
 print(Adam)
 print(Providence.TotalInvested)
 print(Adam.TotalPositiveTokens(Providence))
 print(Providence.TotalPositiveTokens())
 print(Adam.CashOut(Providence,True))
-'''
+
 
 #---------------------------------------------------------------
