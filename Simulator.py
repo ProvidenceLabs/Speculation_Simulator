@@ -8,6 +8,7 @@ OriginalMintRate = 1.5
 
 #Objects--------------------------------------------------------
 class Token:
+    AllTokens = []
 
     def __init__ (self, Amount, PredictionBool, UniqueReferenceNumber):
         self.Amount = Amount
@@ -19,12 +20,14 @@ class Token:
             self.Name = "Negative Outcome Token"
         else:
             self.Name = "Null Token"
+        Token.AllTokens.append(self)
 
     def __str__(self):
         return f"{self.Name}: {self.Amount}"
 
 
 class Speculation:
+    AllSpeculations = []
 
     def __init__ (self, UniqueReferenceName):
         self.UniqueReferenceName = UniqueReferenceName
@@ -32,6 +35,10 @@ class Speculation:
         self.NegativeToken = Token(1, False, self.UniqueReferenceName + "002")
         self.AllTokens = [self.PositiveToken, self.NegativeToken]
         self.TotalInvested = 0
+        Speculation.AllSpeculations.append(self)
+
+    def __str__ (self):
+        return(f"{self.UniqueReferenceName} Total Invested: {self.TotalInvested}\n{self.UniqueReferenceName} Total Tokens: {self.TotalTokens()}\n{self.UniqueReferenceName} Total Positive Tokens: {self.TotalPositiveTokens()}\n{self.UniqueReferenceName} Total Negative Tokens: {self.TotalNegativeTokens()}")
 
     def CreateToken (self, Amount, PredictionBool):
         if len(self.AllTokens) < 10:
@@ -108,16 +115,25 @@ class Speculation:
 
 
 class Person:
+    AllPeople = []
 
     def __init__ (self, Name):
         self.Name = Name
         self.Tokens = []
         self.SpeculationInstances = []
+        Person.AllPeople.append(self)
+
+    def __str__ (self):
+        sentence = ""
+        for SpeculationInstance in self.SpeculationInstances:
+            sentence = sentence +f"{self.Name} has {self.TotalPositiveTokens(SpeculationInstance)} Positive Tokens and {self.TotalNegativeTokens(SpeculationInstance)} Negative Tokens in {SpeculationInstance.UniqueReferenceName}\n"
+        return(sentence[0:-1])
 
     def AddTokens (self, SpeculationInstance, Investment, PredictionBool):
         Amount = SpeculationInstance.SlowMintLoop(Investment, PredictionBool)
         TokenInstance = SpeculationInstance.CreateToken(Amount, PredictionBool)
-        self.SpeculationInstances.append(SpeculationInstance)
+        if all(Spec != SpeculationInstance for Spec in self.SpeculationInstances):
+            self.SpeculationInstances.append(SpeculationInstance)
         self.Tokens.append(TokenInstance)
 
     def TotalPositiveTokens(self, SpeculationInstance):
@@ -135,12 +151,6 @@ class Person:
                 if not obj.PredictionBool:
                     sum += obj.Amount
         return sum
-
-    def __str__ (self):
-        sentence = ""
-        for SpeculationInstance in self.SpeculationInstances:
-            sentence = sentence +f"{self.Name} has {self.TotalPositiveTokens(SpeculationInstance)} Positive Tokens and {self.TotalNegativeTokens(SpeculationInstance)} Negative Tokens in {SpeculationInstance.UniqueReferenceName}"
-        return(sentence)
 
     def CashOut(self, SpeculationInstance, OutcomeBool):
         if OutcomeBool:
@@ -161,21 +171,27 @@ AdamsTokens = Token(10, True)
 print(AdamsTokens.Name)
 '''
 
-
+'''
 #Speculation Initialisation Test
 Providence = Speculation("PRO")
 print(Providence.TotalTokens())
+'''
 
-
-
-#Person and Token Initialisation Test
+'''
+#Functionality Test
+Providence = Speculation("PRO")
 Adam = Person("Adam")
-Adam.AddTokens(Providence, 4000, True)
-print(Adam)
-print(Providence.TotalInvested)
-print(Adam.TotalPositiveTokens(Providence))
-print(Providence.TotalPositiveTokens())
-print(Adam.CashOut(Providence,True))
-
+Bob = Person("Bob")
+Charlie = Person("Charlie")
+Adam.AddTokens(Providence, 1000000, True)
+Adam.AddTokens(Providence,1000, False)
+Bob.AddTokens(Providence, 1000, False)
+Charlie.AddTokens(Providence, 1000, False)
+print(Providence)
+for person in Person.AllPeople:
+    print(person)
+for person in Person.AllPeople:
+    print(f"{person.Name} earns {person.CashOut(Providence,False)}")
+'''
 
 #---------------------------------------------------------------
