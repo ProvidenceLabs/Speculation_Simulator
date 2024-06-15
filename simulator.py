@@ -115,6 +115,9 @@ class Speculation:
         else:
             return("Invalid PredictionBool")
 
+    def Quotient(self):
+        return (self.TotalPositiveTokens()/self.TotalNegativeTokens())
+
 
 class Person:
     AllPeople = []
@@ -209,55 +212,87 @@ class Person:
             return(0)
 
 
+class InvestingStrayegy:
+    def __init__(self) -> None:
+        pass
+
+
 #---------------------------------------------------------------
 
 
 #Tests----------------------------------------------------------
-'''
-#Speculation Initialisation Test
-Providence = Speculation("PRO", 100)
-Adam = Person("Adam")
-Adam.MintTokens(Providence, 100, True)
-Adam.MintTokens(Providence,50, False)
-Adam.MintTokens(Providence, 200, True)
-Adam.SwapTokens(Providence, 30, 130, False)
 
-print(Providence.FindToken("PRO003"))
-print(Providence.FindToken("PRO005"))
-print(Providence.FindToken("PRO006"))
+def FunctionalityTest():
+    Providence = Speculation("PRO", 100)
+    Adam = Person("Adam")
+    Bob = Person("Bob")
+    Charlie = Person("Charlie")
+    Adam.MintTokens(Providence, 100, True)
+    Bob.MintTokens(Providence, 100, False)
+    Charlie.MintTokens(Providence, 20, True)
 
-print(Providence.TotalTokens())
-'''
+    #Bob.SwapTokens(Providence, 20, Bob.TotalPositiveTokens(Providence), False)
+    #Adam.SwapTokens(Providence, 20, Adam.TotalPositiveTokens(Providence), False)
+    Charlie.SwapTokens(Providence, 20, Charlie.TotalPositiveTokens(Providence), False)
+    #print(Bob)
+    #print(Adam)
+    print(Charlie)
 
-'''
-#Functionality Test
-Providence = Speculation("PRO", 100)
-Adam = Person("Adam")
-Bob = Person("Bob")
-Charlie = Person("Charlie")
-Adam.MintTokens(Providence, 1000, True)
-Bob.MintTokens(Providence, 1, True)
-Charlie.MintTokens(Providence, 1, False)
+    Bob.SwapTokens(Providence, 29, Bob.TotalNegativeTokens(Providence)/2, True)
+    #Adam.SwapTokens(Providence, 30, Adam.TotalNegativeTokens(Providence), True)
+    Charlie.SwapTokens(Providence, 30, Charlie.TotalNegativeTokens(Providence), True)
+    print(Bob)
+    #print(Adam)
+    print(Charlie)
 
-Bob.SwapTokens(Providence, 20, Bob.TotalPositiveTokens(Providence), False)
-Adam.SwapTokens(Providence, 20, Adam.TotalPositiveTokens(Providence), False)
+    #Bob.SwapTokens(Providence, 40, Bob.TotalPositiveTokens(Providence), False)
+    #Adam.SwapTokens(Providence, 40, Adam.TotalPositiveTokens(Providence), False)
+    Charlie.SwapTokens(Providence, 40, Charlie.TotalPositiveTokens(Providence), False)
+    #print(Bob)
+    #print(Adam)
+    print(Charlie)
 
-Bob.SwapTokens(Providence, 30, Bob.TotalNegativeTokens(Providence), True)
-Adam.SwapTokens(Providence, 30, Adam.TotalNegativeTokens(Providence), True)
+    #Bob.SwapTokens(Providence, 50, Bob.TotalNegativeTokens(Providence), True)
+    #Adam.SwapTokens(Providence, 50, Adam.TotalNegativeTokens(Providence)/2, True)
+    Charlie.SwapTokens(Providence, 50, Charlie.TotalNegativeTokens(Providence), True)
+    #print(Bob)
+    #print(Adam)
+    print(Charlie)
 
-Bob.SwapTokens(Providence, 40, Bob.TotalPositiveTokens(Providence), False)
-Adam.SwapTokens(Providence, 40, Adam.TotalPositiveTokens(Providence), False)
+    print(Providence)
+    for person in Person.AllPeople:
+        print(person)
+    for person in Person.AllPeople:
+        print(f"{person.Name} earns {person.CashOut(Providence,True)}")
 
-Bob.SwapTokens(Providence, 50, Bob.TotalNegativeTokens(Providence), True)
-Adam.SwapTokens(Providence, 50, Adam.TotalNegativeTokens(Providence)/2, True)
+
+def NormalcyTesting ():
+    Providence = Speculation("PRO", 100)
+    AverageUsers = Person("AverageUsers")
+    Duration = Providence.DurationLength
+    CurrentTime = 0
+    # early stage still needs work 
+    while CurrentTime < Duration:
+        QuotientNumber = 2
+        CurrentTime += 1
+        #PositiveToken
+        AverageUsers.MintTokens(Providence, 100*QuotientNumber/(QuotientNumber+1), True)
+        #NegativeTokens
+        if Providence.SwappingMultiplier(CurrentTime,False)>=1:
+            AverageUsers.MintTokens(Providence, 100/(QuotientNumber+1), True)
+            if Providence.Quotient()>QuotientNumber:
+                SwapAmount = (Providence.TotalPositiveTokens()-Providence.TotalNegativeTokens())/(QuotientNumber + 1)
+                AverageUsers.SwapTokens(Providence,CurrentTime,SwapAmount,False)
+        else:
+            AverageUsers.MintTokens(Providence, 100/(QuotientNumber+1), False)
+        print(CurrentTime)
+        print(Providence)
+    for person in Person.AllPeople:
+        print(person)
+    for person in Person.AllPeople:
+        print(f"{person.Name} earns {person.CashOut(Providence,True)}")
 
 
-
-print(Providence)
-for person in Person.AllPeople:
-    print(person)
-for person in Person.AllPeople:
-    print(f"{person.Name} earns {person.CashOut(Providence,True)}")
-'''
 
 #---------------------------------------------------------------
+NormalcyTesting()
