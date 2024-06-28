@@ -1,4 +1,5 @@
 import math
+import random
 #Global Variables-----------------------------------------------
 #None
 #---------------------------------------------------------------
@@ -114,6 +115,23 @@ class Speculation:
                 return(self.Sigmoid(Time)*TimeDampeningFunction/p)
         else:
             return("Invalid PredictionBool")
+        
+    def SwapTokens (self, Person, Time, SwapAmount, NewPredictionBool):
+        OldPredictionBool = not NewPredictionBool
+        if OldPredictionBool:
+            if Person.TotalPositiveTokens(self)<SwapAmount:
+                return(False)
+            else:
+                MintAmount = self.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
+                Person.BurnTokens(self, SwapAmount, OldPredictionBool)
+                Person.AddTokens(self, MintAmount, NewPredictionBool)
+        else:
+            if Person.TotalNegativeTokens(self)<SwapAmount:
+                return(False)
+            else:
+                MintAmount = self.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
+                Person.BurnTokens(self, SwapAmount, OldPredictionBool)
+                Person.AddTokens(self, MintAmount, NewPredictionBool)
 
     def Quotient(self):
         return (self.TotalPositiveTokens()/self.TotalNegativeTokens())
@@ -121,11 +139,13 @@ class Speculation:
 
 class Person:
     AllPeople = []
+    # work on self.SpeculationInstances = [] & self.InvestmentStrategies = []
 
     def __init__ (self, Name):
         self.Name = Name
         self.Tokens = []
         self.SpeculationInstances = []
+        self.InvestmentStrategies = []
         Person.AllPeople.append(self)
 
     def __str__ (self):
@@ -186,6 +206,15 @@ class Person:
         else:
             return("Incorrect outcome selection")
 
+    def CashOut(self, SpeculationInstance, OutcomeBool):
+            if OutcomeBool:
+                return (SpeculationInstance.TotalInvested * self.TotalPositiveTokens(SpeculationInstance)/SpeculationInstance.TotalPositiveTokens())
+            elif not OutcomeBool:
+                return (SpeculationInstance.TotalInvested * self.TotalNegativeTokens(SpeculationInstance)/SpeculationInstance.TotalNegativeTokens())
+            else:
+                return(0)
+
+'''
     def SwapTokens (self, SpeculationInstance, Time, SwapAmount, NewPredictionBool):
         OldPredictionBool = not NewPredictionBool
         if OldPredictionBool:
@@ -202,19 +231,71 @@ class Person:
                 MintAmount = SpeculationInstance.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
                 self.BurnTokens(SpeculationInstance, SwapAmount, OldPredictionBool)
                 self.AddTokens(SpeculationInstance, MintAmount, NewPredictionBool)
+'''
 
-    def CashOut(self, SpeculationInstance, OutcomeBool):
-        if OutcomeBool:
-            return (SpeculationInstance.TotalInvested * self.TotalPositiveTokens(SpeculationInstance)/SpeculationInstance.TotalPositiveTokens())
-        elif not OutcomeBool:
-            return (SpeculationInstance.TotalInvested * self.TotalNegativeTokens(SpeculationInstance)/SpeculationInstance.TotalNegativeTokens())
+class InvestingStrategy:
+    def __init__(self, RiskLevel, PerceivedOdds, Person, SpeculationInstance):
+        self.RiskLevel = RiskLevel # 1 Low risk picking right at the end  2 Wait and see strategy (mid)  3 Assertive to manage the portfolio throughout
+        self.PerceivedOdds = PerceivedOdds #Yes/No Yes more likely over 1 No more likely under 1
+        self.Person = Person
+        self.SpeculationInstance = SpeculationInstance
+        
+    def __str__ (self):
+        return(f"The Risk Level is {self.RiskLevel}")
+    
+    def Investment(self, Time):
+        PriceRatio = max(self.SpeculationInstance.SwappingMultiplier(Time, True),1)/max(self.SpeculationInstance.SwappingMultiplier(Time, False),1)
+        InitialPhase = self.SpeculationInstance.SwappingMultiplier(Time, True)>1 or self.SpeculationInstance.SwappingMultiplier(Time, False)>1
+        TokenRatio = self.SpeculationInstance.TotalPositiveTokens()/self.SpeculationInstance.TotalNegativeTokens()
+        if self.RiskLevel == 1:
+            if InitialPhase:
+                if PriceRatio < self.PerceivedOdds:
+                    return(1)
+                elif PriceRatio > self.PerceivedOdds:
+                    return(-1)
+                else:
+                    return(0)
+                
+            else:
+                if TokenRatio < self.PerceivedOdds:
+                    return(1)
+                elif TokenRatio > self.PerceivedOdds:
+                    return(-1)
+                else:
+                    return(0)
+        elif self.RiskLevel == 2:
+            if InitialPhase:
+                if PriceRatio < self.PerceivedOdds:
+                    return(1)
+                elif PriceRatio > self.PerceivedOdds:
+                    return(-1)
+                else:
+                    return(0)        
+            else:
+                if TokenRatio < self.PerceivedOdds:
+                    return(1)
+                elif TokenRatio > self.PerceivedOdds:
+                    return(-1)
+                else:
+                    return(0)
+        elif self.RiskLevel == 3:
+            if InitialPhase:
+                if PriceRatio < self.PerceivedOdds:
+                    return(1)
+                elif PriceRatio > self.PerceivedOdds:
+                    return(-1)
+                else:
+                    return(0)
+                
+            else:
+                if TokenRatio < self.PerceivedOdds:
+                    return(1)
+                elif TokenRatio > self.PerceivedOdds:
+                    return(-1)
+                else:
+                    return(0)
         else:
-            return(0)
-
-
-class InvestingStrayegy:
-    def __init__(self) -> None:
-        pass
+            return(False)
 
 
 #---------------------------------------------------------------
@@ -233,38 +314,6 @@ def FunctionalityTest():
 
     #Bob.SwapTokens(Providence, 20, Bob.TotalPositiveTokens(Providence), False)
     #Adam.SwapTokens(Providence, 20, Adam.TotalPositiveTokens(Providence), False)
-    Charlie.SwapTokens(Providence, 20, Charlie.TotalPositiveTokens(Providence), False)
-    #print(Bob)
-    #print(Adam)
-    print(Charlie)
-
-    Bob.SwapTokens(Providence, 29, Bob.TotalNegativeTokens(Providence)/2, True)
-    #Adam.SwapTokens(Providence, 30, Adam.TotalNegativeTokens(Providence), True)
-    Charlie.SwapTokens(Providence, 30, Charlie.TotalNegativeTokens(Providence), True)
-    print(Bob)
-    #print(Adam)
-    print(Charlie)
-
-    #Bob.SwapTokens(Providence, 40, Bob.TotalPositiveTokens(Providence), False)
-    #Adam.SwapTokens(Providence, 40, Adam.TotalPositiveTokens(Providence), False)
-    Charlie.SwapTokens(Providence, 40, Charlie.TotalPositiveTokens(Providence), False)
-    #print(Bob)
-    #print(Adam)
-    print(Charlie)
-
-    #Bob.SwapTokens(Providence, 50, Bob.TotalNegativeTokens(Providence), True)
-    #Adam.SwapTokens(Providence, 50, Adam.TotalNegativeTokens(Providence)/2, True)
-    Charlie.SwapTokens(Providence, 50, Charlie.TotalNegativeTokens(Providence), True)
-    #print(Bob)
-    #print(Adam)
-    print(Charlie)
-
-    print(Providence)
-    for person in Person.AllPeople:
-        print(person)
-    for person in Person.AllPeople:
-        print(f"{person.Name} earns {person.CashOut(Providence,True)}")
-
 
 def NormalcyTesting ():
     Providence = Speculation("PRO", 100)
@@ -282,7 +331,7 @@ def NormalcyTesting ():
             AverageUsers.MintTokens(Providence, 100/(QuotientNumber+1), True)
             if Providence.Quotient()>QuotientNumber:
                 SwapAmount = (Providence.TotalPositiveTokens()-Providence.TotalNegativeTokens())/(QuotientNumber + 1)
-                AverageUsers.SwapTokens(Providence,CurrentTime,SwapAmount,False)
+                Providence.SwapTokens(AverageUsers,CurrentTime,SwapAmount,False)
         else:
             AverageUsers.MintTokens(Providence, 100/(QuotientNumber+1), False)
         print(CurrentTime)
@@ -295,4 +344,4 @@ def NormalcyTesting ():
 
 
 #---------------------------------------------------------------
-NormalcyTesting()
+#NormalcyTesting()
