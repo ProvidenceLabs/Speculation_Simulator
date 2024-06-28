@@ -1,11 +1,13 @@
 import math
 import random
 #Global Variables-----------------------------------------------
+
 #None
+
 #---------------------------------------------------------------
 
-
 #Objects--------------------------------------------------------
+
 class Token:
     AllTokens = []
 
@@ -164,6 +166,7 @@ class Person:
     def __init__ (self, Name):
         self.Name = Name
         self.Tokens = []
+        self.TotalInvested = []
         self.SpeculationInstances = []
         self.InvestmentStrategies = []
         Person.AllPeople.append(self)
@@ -171,18 +174,28 @@ class Person:
     def __str__ (self):
         sentence = ""
         for SpeculationInstance in self.SpeculationInstances:
-            sentence = sentence +f"{self.Name} has {self.TotalPositiveTokens(SpeculationInstance)} Positive Tokens and {self.TotalNegativeTokens(SpeculationInstance)} Negative Tokens in {SpeculationInstance.UniqueReferenceName}\n"
+            sentence = sentence +f"{self.Name} has invested ${self.FindSpeculationTotalInvested(SpeculationInstance)[1]} in {SpeculationInstance.UniqueReferenceName} and has {self.TotalPositiveTokens(SpeculationInstance)} Positive Tokens and {self.TotalNegativeTokens(SpeculationInstance)} Negative Tokens.\n"
         return(sentence[0:-1])
 
     def AddTokens (self, Time, SpeculationInstance, Amount, PredictionBool,):
         TokenInstance = SpeculationInstance.MintToken(Time, Amount, PredictionBool, self)
         if all(Spec != SpeculationInstance for Spec in self.SpeculationInstances):
             self.SpeculationInstances.append(SpeculationInstance)
+            temparr = [SpeculationInstance.UniqueReferenceName,0]
+            self.TotalInvested.append(temparr)
         self.Tokens.append(TokenInstance)
 
     def MintTokens (self, Time, SpeculationInstance, Investment, PredictionBool):
         self.AddTokens (Time, SpeculationInstance, Investment, PredictionBool)
         SpeculationInstance.TotalInvested += Investment
+        self.FindSpeculationTotalInvested(SpeculationInstance)[1] += Investment
+        
+    def FindSpeculationTotalInvested(self, SpeculationInstance):
+        TargetSpec = None
+        for element in self.TotalInvested:
+            if element[0] == SpeculationInstance.UniqueReferenceName:
+                TaregetSpec = element
+                return(TaregetSpec)
 
     def AddInvestmentStrategy(self, SpeculationInstance, PerceivedOdds, RiskLevel):
         self.InvestmentStrategies.append(InvestingStrategy(RiskLevel, PerceivedOdds, self, SpeculationInstance))
@@ -240,7 +253,7 @@ class Person:
                 return(0)
 
     def SwapTokens (self, SpeculationInstance, Time, SwapAmount, NewPredictionBool):
-        TokenInstance = SpeculationInstance.SwapTokens(self, Time, SwapAmount, NewPredictionBool)
+        SpeculationInstance.SwapTokens(self, Time, SwapAmount, NewPredictionBool)
 
     def FindInvestmentStrategy (self, SpeculationInstance):
         TargetStrategy = None
@@ -335,10 +348,10 @@ class InvestingStrategy:
 
 #---------------------------------------------------------------
 
-
 #Tests----------------------------------------------------------
 
 def FunctionalityTest():
+    print("running FunctionalityTest")
     Providence = Speculation("PRO", 100)
     Adam = Person("Adam")
     Bob = Person("Bob")
@@ -353,6 +366,7 @@ def FunctionalityTest():
     print(Charlie)
 
 def NormalcyTesting ():
+    print("running NormalcyTesting")
     Providence = Speculation("PRO", 100)
     AverageUsers = Person("AverageUsers")
     Duration = Providence.DurationLength
@@ -379,6 +393,7 @@ def NormalcyTesting ():
         print(f"{person.Name} earns {person.CashOut(Providence,True)}")
 
 def NormalcyTesting2 ():
+    print("running NormalcyTesting2")
     Providence = Speculation("PRO", 100)
     CautiousUsers = Person("CautiousUsers")
     AverageUsers = Person("AverageUsers")
@@ -390,7 +405,6 @@ def NormalcyTesting2 ():
     CurrentTime = 0
     while CurrentTime < Duration-1:
         CurrentTime += 1
-        #print(Providence.UniqueReferenceName)
         CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
         AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
         AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
@@ -399,9 +413,14 @@ def NormalcyTesting2 ():
             print(person)
         print(" ")
     for person in Person.AllPeople:
-        print(f"{person.Name} earns {person.CashOut(Providence,True)}")
+        print(f"{person.Name} earns ${person.CashOut(Providence,True)}")
 
 #---------------------------------------------------------------
+
+#Runs-----------------------------------------------------------
+
 #FunctionalityTest()
 #NormalcyTesting()
 NormalcyTesting2()
+
+#---------------------------------------------------------------
