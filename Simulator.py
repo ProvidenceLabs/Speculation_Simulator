@@ -22,7 +22,7 @@ class Token:
         Token.AllTokens.append(self)
 
     def __str__(self):
-        return f"{self.Name}: {self.Amount}"
+        return f"Token {self.UniqueReferenceNumber} is a {self.Name} with Amount: {self.Amount}"
 
     def ReduceAmount (self, Reduction):
         CurrentAmount = self.Amount
@@ -48,6 +48,23 @@ class Speculation:
 
     def __str__ (self):
         return(f"{self.UniqueReferenceName} Total Invested: {self.TotalInvested}\n{self.UniqueReferenceName} Total Tokens: {self.TotalTokens()}\n{self.UniqueReferenceName} Total Positive Tokens: {self.TotalPositiveTokens()}\n{self.UniqueReferenceName} Total Negative Tokens: {self.TotalNegativeTokens()}")
+
+    def MintToken (self, Time, Amount, PredictionBool, Person):
+        if self.SwappingMultiplier(Time, PredictionBool)<=1 or self.TotalTokens()==2:
+            return(self.CreateToken(Amount, PredictionBool))
+
+        elif self.SwappingMultiplier(Time, PredictionBool)>1:
+            OppositePredictionBool = not PredictionBool
+            Person.AddTokens(Time, self, Amount, OppositePredictionBool)
+            Output = Person.SwapTokens(self, Time, Amount, PredictionBool)
+
+            #below is here because the output above is none but i can't work out why
+            if Output == None:
+                Output = self.AllTokens[-1]
+            return(Output)
+
+        else:
+            return(False)
 
     def CreateToken (self, Amount, PredictionBool):
         if len(self.AllTokens) < 10:
@@ -115,7 +132,7 @@ class Speculation:
                 return(self.Sigmoid(Time)*TimeDampeningFunction/p)
         else:
             return("Invalid PredictionBool")
-        
+
     def SwapTokens (self, Person, Time, SwapAmount, NewPredictionBool):
         OldPredictionBool = not NewPredictionBool
         if OldPredictionBool:
@@ -124,14 +141,18 @@ class Speculation:
             else:
                 MintAmount = self.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
                 Person.BurnTokens(self, SwapAmount, OldPredictionBool)
-                Person.AddTokens(self, MintAmount, NewPredictionBool)
+                Output = self.CreateToken( MintAmount, NewPredictionBool)
+                #print(Output)
+                return(Output)
         else:
             if Person.TotalNegativeTokens(self)<SwapAmount:
                 return(False)
             else:
                 MintAmount = self.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
                 Person.BurnTokens(self, SwapAmount, OldPredictionBool)
-                Person.AddTokens(self, MintAmount, NewPredictionBool)
+                Output = self.CreateToken( MintAmount, NewPredictionBool)
+                #print(Output)
+                return(Output)
 
     def Quotient(self):
         return (self.TotalPositiveTokens()/self.TotalNegativeTokens())
@@ -139,7 +160,6 @@ class Speculation:
 
 class Person:
     AllPeople = []
-    # work on self.SpeculationInstances = [] & self.InvestmentStrategies = []
 
     def __init__ (self, Name):
         self.Name = Name
@@ -154,30 +174,35 @@ class Person:
             sentence = sentence +f"{self.Name} has {self.TotalPositiveTokens(SpeculationInstance)} Positive Tokens and {self.TotalNegativeTokens(SpeculationInstance)} Negative Tokens in {SpeculationInstance.UniqueReferenceName}\n"
         return(sentence[0:-1])
 
-    def AddTokens (self, SpeculationInstance, Amount, PredictionBool):
-        TokenInstance = SpeculationInstance.CreateToken(Amount, PredictionBool)
+    def AddTokens (self, Time, SpeculationInstance, Amount, PredictionBool,):
+        TokenInstance = SpeculationInstance.MintToken(Time, Amount, PredictionBool, self)
         if all(Spec != SpeculationInstance for Spec in self.SpeculationInstances):
             self.SpeculationInstances.append(SpeculationInstance)
         self.Tokens.append(TokenInstance)
 
-    def MintTokens (self, SpeculationInstance, Investment, PredictionBool):
-        self.AddTokens (SpeculationInstance, Investment, PredictionBool)
+    def MintTokens (self, Time, SpeculationInstance, Investment, PredictionBool):
+        self.AddTokens (Time, SpeculationInstance, Investment, PredictionBool)
         SpeculationInstance.TotalInvested += Investment
+
+    def AddInvestmentStrategy(self, SpeculationInstance, PerceivedOdds, RiskLevel):
+        self.InvestmentStrategies.append(InvestingStrategy(RiskLevel, PerceivedOdds, self, SpeculationInstance))
 
     def TotalPositiveTokens(self, SpeculationInstance):
         sum = 0
-        for obj in self.Tokens:
-            if any(token.UniqueReferenceNumber == obj.UniqueReferenceNumber for token in SpeculationInstance.AllTokens):
-                if obj.PredictionBool:
-                    sum += obj.Amount
+        if len(self.Tokens)>0:
+            for obj in self.Tokens:
+                if any(token.UniqueReferenceNumber == obj.UniqueReferenceNumber for token in SpeculationInstance.AllTokens):
+                    if obj.PredictionBool:
+                        sum += obj.Amount
         return sum
 
     def TotalNegativeTokens(self, SpeculationInstance):
-        sum = 0
-        for obj in self.Tokens:
-            if any(token.UniqueReferenceNumber == obj.UniqueReferenceNumber for token in SpeculationInstance.AllTokens):
-                if not obj.PredictionBool:
-                    sum += obj.Amount
+        if len(self.Tokens)>0:
+            sum = 0
+            for obj in self.Tokens:
+                if any(token.UniqueReferenceNumber == obj.UniqueReferenceNumber for token in SpeculationInstance.AllTokens):
+                    if not obj.PredictionBool:
+                        sum += obj.Amount
         return sum
 
     def FindToken (self, UniqueReferenceNumber):
@@ -214,38 +239,34 @@ class Person:
             else:
                 return(0)
 
-'''
     def SwapTokens (self, SpeculationInstance, Time, SwapAmount, NewPredictionBool):
-        OldPredictionBool = not NewPredictionBool
-        if OldPredictionBool:
-            if self.TotalPositiveTokens(SpeculationInstance)<SwapAmount:
-                return(False)
-            else:
-                MintAmount = SpeculationInstance.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
-                self.BurnTokens(SpeculationInstance, SwapAmount, OldPredictionBool)
-                self.AddTokens(SpeculationInstance, MintAmount, NewPredictionBool)
-        else:
-            if self.TotalNegativeTokens(SpeculationInstance)<SwapAmount:
-                return(False)
-            else:
-                MintAmount = SpeculationInstance.SwappingMultiplier(Time, NewPredictionBool)*SwapAmount
-                self.BurnTokens(SpeculationInstance, SwapAmount, OldPredictionBool)
-                self.AddTokens(SpeculationInstance, MintAmount, NewPredictionBool)
-'''
+        TokenInstance = SpeculationInstance.SwapTokens(self, Time, SwapAmount, NewPredictionBool)
+
+    def FindInvestmentStrategy (self, SpeculationInstance):
+        TargetStrategy = None
+        for Strategy in self.InvestmentStrategies:
+            if Strategy.SpeculationInstance.UniqueReferenceName == SpeculationInstance.UniqueReferenceName:
+                TargetStrategy = Strategy
+                return(TargetStrategy)
+
 
 class InvestingStrategy:
+    AllInvestingStrategies = []
+
     def __init__(self, RiskLevel, PerceivedOdds, Person, SpeculationInstance):
         self.RiskLevel = RiskLevel # 1 Low risk picking right at the end  2 Wait and see strategy (mid)  3 Assertive to manage the portfolio throughout
         self.PerceivedOdds = PerceivedOdds #Yes/No Yes more likely over 1 No more likely under 1
         self.Person = Person
         self.SpeculationInstance = SpeculationInstance
-        
+        self.UniqueReferenceName = str(Person.Name +SpeculationInstance.UniqueReferenceName)
+        InvestingStrategy.AllInvestingStrategies.append(self)
+
     def __str__ (self):
-        return(f"The Risk Level is {self.RiskLevel}")
-    
+        return(f"{self.Person} has a Risk Level of {self.RiskLevel} in {self.SpeculationInstance} with Perceived Odds of {self.PerceivedOdds}")
+
     def Investment(self, Time):
-        PriceRatio = max(self.SpeculationInstance.SwappingMultiplier(Time, True),1)/max(self.SpeculationInstance.SwappingMultiplier(Time, False),1)
-        InitialPhase = self.SpeculationInstance.SwappingMultiplier(Time, True)>1 or self.SpeculationInstance.SwappingMultiplier(Time, False)>1
+        PriceRatio = max(self.SpeculationInstance.SwappingMultiplier(Time, False),1)/max(self.SpeculationInstance.SwappingMultiplier(Time, True),1)
+        InitialPhase = self.SpeculationInstance.SwappingMultiplier(Time, False)>1 or self.SpeculationInstance.SwappingMultiplier(Time, True)>1
         TokenRatio = self.SpeculationInstance.TotalPositiveTokens()/self.SpeculationInstance.TotalNegativeTokens()
         if self.RiskLevel == 1:
             if InitialPhase:
@@ -255,7 +276,7 @@ class InvestingStrategy:
                     return(-1)
                 else:
                     return(0)
-                
+
             else:
                 if TokenRatio < self.PerceivedOdds:
                     return(1)
@@ -270,7 +291,7 @@ class InvestingStrategy:
                 elif PriceRatio > self.PerceivedOdds:
                     return(-1)
                 else:
-                    return(0)        
+                    return(0)
             else:
                 if TokenRatio < self.PerceivedOdds:
                     return(1)
@@ -280,14 +301,16 @@ class InvestingStrategy:
                     return(0)
         elif self.RiskLevel == 3:
             if InitialPhase:
+                #print(f"PriceRatio: {PriceRatio}")
                 if PriceRatio < self.PerceivedOdds:
                     return(1)
                 elif PriceRatio > self.PerceivedOdds:
                     return(-1)
                 else:
                     return(0)
-                
+
             else:
+                #print(f"TokenRatio: {TokenRatio}")
                 if TokenRatio < self.PerceivedOdds:
                     return(1)
                 elif TokenRatio > self.PerceivedOdds:
@@ -296,6 +319,18 @@ class InvestingStrategy:
                     return(0)
         else:
             return(False)
+
+    def MintingStrategy (self, Time, Amount):
+        InvestmentAmount = self.Investment(Time)*Amount
+        #print(f"InvestmentAmount: {InvestmentAmount}")
+        if InvestmentAmount == 0:
+            pass
+        elif InvestmentAmount>0:
+            self.Person.MintTokens(Time, self.SpeculationInstance, InvestmentAmount, True)
+        elif InvestmentAmount<0:
+            self.Person.MintTokens(Time, self.SpeculationInstance, abs(InvestmentAmount), False)
+        else:
+            return("Invalid InvestmentAmount")
 
 
 #---------------------------------------------------------------
@@ -308,19 +343,21 @@ def FunctionalityTest():
     Adam = Person("Adam")
     Bob = Person("Bob")
     Charlie = Person("Charlie")
-    Adam.MintTokens(Providence, 100, True)
-    Bob.MintTokens(Providence, 100, False)
-    Charlie.MintTokens(Providence, 20, True)
+    Adam.MintTokens(1, Providence, 100, True)
+    Bob.MintTokens(2, Providence, 100, True)
+    Charlie.MintTokens(3, Providence, 20, False)
+    Bob.MintTokens(4, Providence, 100, True)
 
-    #Bob.SwapTokens(Providence, 20, Bob.TotalPositiveTokens(Providence), False)
-    #Adam.SwapTokens(Providence, 20, Adam.TotalPositiveTokens(Providence), False)
+    print(Adam)
+    print(Bob)
+    print(Charlie)
 
 def NormalcyTesting ():
     Providence = Speculation("PRO", 100)
     AverageUsers = Person("AverageUsers")
     Duration = Providence.DurationLength
     CurrentTime = 0
-    # early stage still needs work 
+    # early stage still needs work
     while CurrentTime < Duration:
         QuotientNumber = 2
         CurrentTime += 1
@@ -341,7 +378,30 @@ def NormalcyTesting ():
     for person in Person.AllPeople:
         print(f"{person.Name} earns {person.CashOut(Providence,True)}")
 
-
+def NormalcyTesting2 ():
+    Providence = Speculation("PRO", 100)
+    CautiousUsers = Person("CautiousUsers")
+    AverageUsers = Person("AverageUsers")
+    AgressiveUsers = Person("AgressiveUsers")
+    CautiousUsers.AddInvestmentStrategy(Providence, 0.25, 1)
+    AverageUsers.AddInvestmentStrategy(Providence, 0.25, 2)
+    AgressiveUsers.AddInvestmentStrategy(Providence, 0.25, 3)
+    Duration = Providence.DurationLength
+    CurrentTime = 0
+    while CurrentTime < Duration-1:
+        CurrentTime += 1
+        #print(Providence.UniqueReferenceName)
+        CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+        AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+        AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+        print(f"CurrentTime: {CurrentTime}")
+        for person in Person.AllPeople:
+            print(person)
+        print(" ")
+    for person in Person.AllPeople:
+        print(f"{person.Name} earns {person.CashOut(Providence,True)}")
 
 #---------------------------------------------------------------
+#FunctionalityTest()
 #NormalcyTesting()
+NormalcyTesting2()
