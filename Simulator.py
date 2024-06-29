@@ -189,7 +189,7 @@ class Person:
         self.AddTokens (Time, SpeculationInstance, Investment, PredictionBool)
         SpeculationInstance.TotalInvested += Investment
         self.FindSpeculationTotalInvested(SpeculationInstance)[1] += Investment
-        
+
     def FindSpeculationTotalInvested(self, SpeculationInstance):
         TargetSpec = None
         for element in self.TotalInvested:
@@ -405,9 +405,34 @@ def NormalcyTesting2 ():
     CurrentTime = 0
     while CurrentTime < Duration-1:
         CurrentTime += 1
-        CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-        AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-        AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+        case = random.randint(1, 6)
+
+        # Execute different strategies based on the random number
+        match case:
+            case 1:
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+            case 2:
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+            case 3:
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+            case 4:
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+            case 5:
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+            case 6:
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
         print(f"CurrentTime: {CurrentTime}")
         for person in Person.AllPeople:
             print(person)
