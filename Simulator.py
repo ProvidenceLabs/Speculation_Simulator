@@ -281,38 +281,42 @@ class InvestingStrategy:
         PriceRatio = max(self.SpeculationInstance.SwappingMultiplier(Time, False),1)/max(self.SpeculationInstance.SwappingMultiplier(Time, True),1)
         InitialPhase = self.SpeculationInstance.SwappingMultiplier(Time, False)>1 or self.SpeculationInstance.SwappingMultiplier(Time, True)>1
         TokenRatio = self.SpeculationInstance.TotalPositiveTokens()/self.SpeculationInstance.TotalNegativeTokens()
-        if self.RiskLevel == 1:
+        if self.RiskLevel == 1: # people invest late on and only if they are 10% above or below their perceived odds
             if InitialPhase:
-                if PriceRatio < self.PerceivedOdds:
-                    return(1)
-                elif PriceRatio > self.PerceivedOdds:
-                    return(-1)
-                else:
-                    return(0)
+                return(0)
 
             else:
-                if TokenRatio < self.PerceivedOdds:
-                    return(1)
-                elif TokenRatio > self.PerceivedOdds:
-                    return(-1)
+                if Time>0.6*self.SpeculationInstance.DurationLength:
+                    if TokenRatio < self.PerceivedOdds*(0.9):
+                        return(1)
+                    elif TokenRatio > self.PerceivedOdds*(1.1):
+                        return(-1)
+                    else:
+                        return(0)
                 else:
                     return(0)
-        elif self.RiskLevel == 2:
-            if InitialPhase:
-                if PriceRatio < self.PerceivedOdds:
-                    return(1)
-                elif PriceRatio > self.PerceivedOdds:
-                    return(-1)
+        elif self.RiskLevel == 2: # people invest after market is established and odds are kinda above or below their perceived odds
+            percent = (7 + random.randint(0,24)/4)/100 #7-13% in 0.25% incriments
+            HighPerceivedOdds = (1 + percent)*self.PerceivedOdds
+            LowPerceivedOdds = (1 - percent)*self.PerceivedOdds
+            if Time>0.1*self.SpeculationInstance.DurationLength:
+                if InitialPhase:
+                    if PriceRatio < LowPerceivedOdds:
+                        return(1)
+                    elif PriceRatio > HighPerceivedOdds:
+                        return(-1)
+                    else:
+                        return(0)
                 else:
-                    return(0)
+                    if TokenRatio < LowPerceivedOdds:
+                        return(1)
+                    elif TokenRatio > HighPerceivedOdds:
+                        return(-1)
+                    else:
+                        return(0)
             else:
-                if TokenRatio < self.PerceivedOdds:
-                    return(1)
-                elif TokenRatio > self.PerceivedOdds:
-                    return(-1)
-                else:
-                    return(0)
-        elif self.RiskLevel == 3:
+                return(0)
+        elif self.RiskLevel == 3: # people invest every second if they are above or below their perceived odds
             if InitialPhase:
                 #print(f"PriceRatio: {PriceRatio}")
                 if PriceRatio < self.PerceivedOdds:
@@ -392,53 +396,61 @@ def NormalcyTesting ():
     for person in Person.AllPeople:
         print(f"{person.Name} earns {person.CashOut(Providence,True)}")
 
-def NormalcyTesting2 ():
-    print("running NormalcyTesting2")
+def NormalcyTesting2 (PerceivedOdds, Outcome):
+
+    #Initialisation
+    print(f"\nRunning NormalcyTesting2\n")
     Providence = Speculation("PRO", 100)
     CautiousUsers = Person("CautiousUsers")
     AverageUsers = Person("AverageUsers")
     AgressiveUsers = Person("AgressiveUsers")
-    CautiousUsers.AddInvestmentStrategy(Providence, 0.25, 1)
-    AverageUsers.AddInvestmentStrategy(Providence, 0.25, 2)
-    AgressiveUsers.AddInvestmentStrategy(Providence, 0.25, 3)
+    PerceivedOdds = PerceivedOdds
+    CautiousUsers.AddInvestmentStrategy(Providence, PerceivedOdds, 1)
+    AverageUsers.AddInvestmentStrategy(Providence, PerceivedOdds, 2)
+    AgressiveUsers.AddInvestmentStrategy(Providence, PerceivedOdds, 3)
     Duration = Providence.DurationLength
     CurrentTime = 0
+
+    #Investments
     while CurrentTime < Duration-1:
         CurrentTime += 1
         case = random.randint(1, 6)
-
-        # Execute different strategies based on the random number
+        CautiousUsersInvestment = 100
+        AverageUsersInvestment = 100
+        AgressiveUsersInvestment = 100
         match case:
             case 1:
-                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
             case 2:
-                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
             case 3:
-                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
             case 4:
-                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
             case 5:
-                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
             case 6:
-                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
-                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, 100)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
         print(f"CurrentTime: {CurrentTime}")
         for person in Person.AllPeople:
             print(person)
         print(" ")
+
+    #Final Statement
     for person in Person.AllPeople:
-        print(f"{person.Name} earns ${person.CashOut(Providence,True)}")
+        print(f"{person.Name} has invested ${person.FindSpeculationTotalInvested(Providence)[1]} and earns back ${person.CashOut(Providence,Outcome)}")
 
 #---------------------------------------------------------------
 
@@ -446,6 +458,6 @@ def NormalcyTesting2 ():
 
 #FunctionalityTest()
 #NormalcyTesting()
-NormalcyTesting2()
+NormalcyTesting2(PerceivedOdds = 5/2, Outcome = True)
 
 #---------------------------------------------------------------
