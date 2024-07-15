@@ -210,8 +210,8 @@ class Person:
         return sum
 
     def TotalNegativeTokens(self, SpeculationInstance):
+        sum = 0
         if len(self.Tokens)>0:
-            sum = 0
             for obj in self.Tokens:
                 if any(token.UniqueReferenceNumber == obj.UniqueReferenceNumber for token in SpeculationInstance.AllTokens):
                     if not obj.PredictionBool:
@@ -450,7 +450,70 @@ def NormalcyTesting2 (PerceivedOdds, Outcome):
 
     #Final Statement
     for person in Person.AllPeople:
-        print(f"{person.Name} has invested ${person.FindSpeculationTotalInvested(Providence)[1]} and earns back ${person.CashOut(Providence,Outcome)}")
+        print(f"{person.Name} has invested ${0 if person.FindSpeculationTotalInvested(Providence) is None else person.FindSpeculationTotalInvested(Providence)[1]} and earns back ${person.CashOut(Providence,Outcome)}")
+
+def NormalcyTesting3 (PerceivedOdds, Outcome):
+
+    #Initialisation
+    print(f"\nRunning NormalcyTesting2\n")
+    Providence = Speculation("PRO", 100)
+    CautiousUsers = Person("CautiousUsers")
+    AverageUsers = Person("AverageUsers")
+    AgressiveUsers = Person("AgressiveUsers")
+    LastMinuteUser =  Person("LastMinuteUser")
+    PerceivedOdds = PerceivedOdds
+    CautiousUsers.AddInvestmentStrategy(Providence, PerceivedOdds, 1)
+    AverageUsers.AddInvestmentStrategy(Providence, PerceivedOdds, 2)
+    AgressiveUsers.AddInvestmentStrategy(Providence, PerceivedOdds, 3)
+    Duration = Providence.DurationLength
+    CurrentTime = 0
+
+    #Investments
+    while CurrentTime < Duration-1:
+        CurrentTime += 1
+        case = random.randint(1, 6)
+        CautiousUsersInvestment = 100
+        AverageUsersInvestment = 100
+        AgressiveUsersInvestment = 100
+        match case:
+            case 1:
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+            case 2:
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+            case 3:
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+            case 4:
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+            case 5:
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+            case 6:
+                AgressiveUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AgressiveUsersInvestment)
+                AverageUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, AverageUsersInvestment)
+                CautiousUsers.FindInvestmentStrategy(Providence).MintingStrategy(CurrentTime, CautiousUsersInvestment)
+        print(f"CurrentTime: {CurrentTime}")
+        for person in Person.AllPeople:
+            print(person)
+    QuadraticFormula = ((1+math.sqrt(1-4*(1/(PerceivedOdds+(1/PerceivedOdds)+2))))/2)
+    #PercievedProbability = max(QuadraticFormula, 1-QuadraticFormula)
+    #LastMinuteUser.MintTokens(99, Providence, 20000*PercievedProbability, Outcome)
+    #LastMinuteUser.MintTokens(99, Providence, 20000*(1-PercievedProbability), not Outcome)
+    LastMinuteUser.MintTokens(99, Providence, 20000, True)
+    print(LastMinuteUser)
+    print(" ")
+
+    #Final Statement
+    for person in Person.AllPeople:
+        print(f"{person.Name} has invested ${0 if person.FindSpeculationTotalInvested(Providence) is None else person.FindSpeculationTotalInvested(Providence)[1]} and earns back ${person.CashOut(Providence,Outcome)}")
 
 #---------------------------------------------------------------
 
@@ -458,6 +521,7 @@ def NormalcyTesting2 (PerceivedOdds, Outcome):
 
 #FunctionalityTest()
 #NormalcyTesting()
-NormalcyTesting2(PerceivedOdds = 5/2, Outcome = True)
+NormalcyTesting2(PerceivedOdds = 100/1, Outcome = False)
+#NormalcyTesting3(PerceivedOdds = 100/1, Outcome = False)
 
 #---------------------------------------------------------------
